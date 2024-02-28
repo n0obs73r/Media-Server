@@ -7,7 +7,9 @@ function App() {
   const [recordsPerPage] = useState(50);
   const [currentAudioIndex, setCurrentAudioIndex] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false); // State to track whether audio is playing
   const audioRef = useRef(null);
+  const [isShuffleMode, setIsShuffleMode] = useState(false);
   const progressRef = useRef(null);
 
   useEffect(() => {
@@ -21,27 +23,55 @@ function App() {
     setCurrentAudioIndex(index);
     const outputString = filePath.replace(/\\/g, '').replace(/"/g, '');
     audioRef.current.src = `http://192.168.1.5:8080/audio/${encodeURIComponent(outputString)}`;
-    audioRef.current.play().catch(error => {
+    audioRef.current.play().then(() => {
+      setIsPlaying(true); // Set isPlaying to true when audio starts playing
+    }).catch(error => {
       console.error('Failed to play audio:', error);
     });
   };
 
-  const pauseAudio = () => {
-    audioRef.current.pause();
+  const toggleShuffleMode = () => {
+    setIsShuffleMode(!isShuffleMode);
   };
 
-  const playAudio = () => {
-    audioRef.current.play().catch(error => {
-      console.error('Failed to play audio:', error);
-    });
-  };
-
-  const nextAudio = () => {
-    if (currentAudioIndex !== null && currentAudioIndex < files.files.length - 1) {
-      const nextIndex = currentAudioIndex + 1;
-      playFile(nextIndex, files.files[nextIndex].file_name);
+  const toggleAudio = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(error => {
+        console.error('Failed to play audio:', error);
+      });
     }
   };
+
+  // const nextAudio = () => {
+  //   if (currentAudioIndex !== null && currentAudioIndex < files.files.length - 1) {
+  //     const nextIndex = currentAudioIndex + 1;
+  //     playFile(nextIndex, files.files[nextIndex].file_name);
+  //   }
+  // };
+  const nextAudio = () => {
+    let nextIndex;
+    if (isShuffleMode) {
+      nextIndex = Math.floor(Math.random() * (files.files?.length || 0));
+    } else {
+      nextIndex = currentAudioIndex !== null ? currentAudioIndex + 1 : 0;
+      if (nextIndex >= (files.files?.length || 0)) {
+        setCurrentPage(currentPage + 1);
+        nextIndex = 0;
+      }
+    }
+    const nextFile = files.files[nextIndex];
+    if (nextFile && nextFile.file_name) {
+      playFile(nextIndex, nextFile.file_name);
+    } else {
+      console.error("Invalid file data:", nextFile);
+    }
+  };
+  
 
   const prevAudio = () => {
     if (currentAudioIndex !== null && currentAudioIndex > 0) {
@@ -97,18 +127,22 @@ function App() {
         <span> / </span>
         <span className="time">{formatTime(audioRef.current ? audioRef?.current?.duration : 0)}</span>
       </div>
+      <div className="controls" >
+        <button onClick={prevAudio} disabled={currentAudioIndex === null || currentAudioIndex === 0}>Previous Audio</button>
+        {/* <button onClick={pauseAudio}>Pause</button>
+        <button onClick={playAudio}>Play</button> */}
+        <button onClick={toggleAudio}>{isPlaying ? 'Pause' : 'Play'}</button>
+          <button onClick={toggleShuffleMode}>{isShuffleMode ? 'Shuffle Off' : 'Shuffle On'}</button>
+        <button onClick={nextAudio} disabled={currentAudioIndex === null || currentAudioIndex === files.files.length - 1}>Next Audio</button></div>
       </div>
       <div className="controls">
         <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
-        <button onClick={prevAudio} disabled={currentAudioIndex === null || currentAudioIndex === 0}>Previous Audio</button>
-        <button onClick={pauseAudio}>Pause</button>
-        <button onClick={playAudio}>Play</button>
-        <button onClick={nextAudio} disabled={currentAudioIndex === null || currentAudioIndex === files.files.length - 1}>Next Audio</button>
         <button onClick={nextPage}>Next</button>
-        <span>{`Page ${currentPage}`}</span>
-        <span>Total Pages: {files.total_pages}</span>
       </div>
-      <h1>File Details</h1>
+      <div className="page-info">
+      <span className="page-count">{`Page ${currentPage}`} of {files.total_pages}</span>
+</div>
+      <h1>Music Library</h1>
       <div className="file-details">
         <table>
           <thead>
@@ -117,10 +151,10 @@ function App() {
               <th>Artist</th>
               <th>Album</th>
               <th>Genre</th>
-              <th>Track Number</th>
+              {/* <th>Track Number</th> */}
               <th>Year</th>
               <th>Duration</th>
-              <th>File Path</th>
+              {/* <th>File Path</th> */}
             </tr>
           </thead>
           <tbody>
@@ -130,10 +164,10 @@ function App() {
                 <td>{JSON.stringify(file.artist.String)}</td>
                 <td>{JSON.stringify(file.album.String)}</td>
                 <td>{JSON.stringify(file.genre.String)}</td>
-                <td>{JSON.stringify(file.track_number.Int64)}</td>
+                {/* <td>{JSON.stringify(file.track_number.Int64)}</td> */}
                 <td>{JSON.stringify(file.year.String)}</td>
                 <td>{JSON.stringify(file.duration.Float64)}</td>
-                <td>{JSON.stringify(file.file_path)}</td>
+                {/* <td>{JSON.stringify(file.file_path)}</td> */}
               </tr>
             ))}
           </tbody>
