@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
+import dummyImage from './img/dummy.png'; // Import the dummy image
+import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRandom  } from 'react-icons/fa';
+
+
 
 function App() {
   const [files, setFiles] = useState([]);
@@ -12,17 +16,55 @@ function App() {
   const [isShuffleMode, setIsShuffleMode] = useState(false);
   const progressRef = useRef(null);
 
+  const fetchAlbumArt = async (filePath) => {
+    try {
+      const response = await fetch(`http://192.168.1.7:8080/albumart/${encodeURIComponent(filePath)}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch album art: ${response.status} ${response.statusText}`);
+      }
+      return URL.createObjectURL(await response.blob()); // Convert the response blob to a URL
+    } catch (error) {
+      console.error('Error fetching album art:', error);
+      throw new Error('Failed to fetch album art');
+    }
+  };
+
   useEffect(() => {
-    fetch(`http://192.168.1.5:8080/files?limit=${recordsPerPage}&offset=${(currentPage - 1) * recordsPerPage}`)
+    fetch(`http://192.168.1.7:8080/files?limit=${recordsPerPage}&offset=${(currentPage - 1) * recordsPerPage}`)
       .then(response => response.json())
-      .then(data => setFiles(data))
+      .then(data => {
+        if (currentPage === 1) {
+          setFiles(data);
+        } else {
+          setFiles(prevFiles => ({
+            files: [...prevFiles.files, ...data.files],
+            total_pages: data.total_pages
+          }));
+        }
+      })
       .catch(error => console.error('Error fetching data:', error));
   }, [currentPage, recordsPerPage]);
+
+  useEffect(() => {
+    if (currentAudioIndex !== null && files.files && files.files[currentAudioIndex] && !files.files[currentAudioIndex].album_art) {
+      fetchAlbumArt(files.files[currentAudioIndex].file_name)
+        .then(albumArtUrl => {
+          setFiles(prevFiles => {
+            const updatedFiles = [...prevFiles.files];
+            updatedFiles[currentAudioIndex].album_art = albumArtUrl;
+            return { ...prevFiles, files: updatedFiles };
+          });
+        })
+        .catch(error => console.error('Error fetching album art:', error));
+    }
+  }, [currentAudioIndex, files]);
+
+  
 
   const playFile = (index, filePath) => {
     setCurrentAudioIndex(index);
     const outputString = filePath.replace(/\\/g, '').replace(/"/g, '');
-    audioRef.current.src = `http://192.168.1.5:8080/audio/${encodeURIComponent(outputString)}`;
+    audioRef.current.src = `http://192.168.1.7:8080/audio/${encodeURIComponent(outputString)}`;
     audioRef.current.play().then(() => {
       setIsPlaying(true); // Set isPlaying to true when audio starts playing
     }).catch(error => {
@@ -46,13 +88,6 @@ function App() {
       });
     }
   };
-
-  // const nextAudio = () => {
-  //   if (currentAudioIndex !== null && currentAudioIndex < files.files.length - 1) {
-  //     const nextIndex = currentAudioIndex + 1;
-  //     playFile(nextIndex, files.files[nextIndex].file_name);
-  //   }
-  // };
   const nextAudio = () => {
     let nextIndex;
     if (isShuffleMode) {
@@ -106,34 +141,47 @@ function App() {
   const prevPage = () => {
     setCurrentPage(currentPage - 1);
   };
+  
 
   return (
-    <div className="container">
-      <div className='NowPlaying'>
-      <audio ref={audioRef} onTimeUpdate={handleTimeUpdate}></audio>
-      <div className="audio-controls">
-        <div className="progress-container">
-          <input
-            type="range"
-            value={currentTime}
-            max={audioRef.current ? audioRef.current.duration : 0}
-            onChange={handleSeek}
-            ref={progressRef}
-            className="progress-bar"
-          />
-          <div className="progress" style={{ width: `${(currentTime / audioRef?.current?.duration) * 100}%` }}></div>
+     <div className="container">
+      <div className="file-details">
+      <div className="album-art" style={{ float: 'left', marginRight: '10px' }}>
+          {files.files && files.files[currentAudioIndex] && files.files[currentAudioIndex].album_art ?
+            <img src={files.files[currentAudioIndex].album_art} alt="Album Art" style={{ maxWidth: '50px', height: '50px' }} /> :
+            <img src={dummyImage} alt="Dummy Image" style={{ maxWidth: '50px', height: 'auto' }} /> // Render dummy image if no album art
+          }
         </div>
-        <span className="time">{formatTime(currentTime)}</span>
-        <span> / </span>
-        <span className="time">{formatTime(audioRef.current ? audioRef?.current?.duration : 0)}</span>
-      </div>
-      <div className="controls" >
-        <button onClick={prevAudio} disabled={currentAudioIndex === null || currentAudioIndex === 0}>Previous Audio</button>
-        {/* <button onClick={pauseAudio}>Pause</button>
-        <button onClick={playAudio}>Play</button> */}
-        <button onClick={toggleAudio}>{isPlaying ? 'Pause' : 'Play'}</button>
-          <button onClick={toggleShuffleMode}>{isShuffleMode ? 'Shuffle Off' : 'Shuffle On'}</button>
-        <button onClick={nextAudio} disabled={currentAudioIndex === null || currentAudioIndex === files.files.length - 1}>Next Audio</button></div>
+        <div className='NowPlaying' style={{ overflow: 'hidden' }}>
+          <audio ref={audioRef} onTimeUpdate={handleTimeUpdate}></audio>
+          <div className="audio-controls">
+            <div className="progress-container" style={{ float: 'left', width: 'calc(100% - 80px)' }}>
+            <div className="song-details" style={{ float: 'left', maxWidth: 'calc(100% - 110px)', overflow: 'hidden' }}>
+    <div>Title: {files.files && files.files[currentAudioIndex] ? files.files[currentAudioIndex].title.String : 'Unknown'}</div>
+    <div>Artist: {files.files && files.files[currentAudioIndex] ? files.files[currentAudioIndex].artist.String : 'Unknown'}</div>
+  </div>
+              <input
+                type="range"
+                value={currentTime}
+                max={audioRef.current ? audioRef.current.duration : 0}
+                onChange={handleSeek}
+                ref={progressRef}
+                className="progress-bar"
+              />
+              <div className="progress" style={{ width: `${(currentTime / audioRef?.current?.duration) * 100}%` }}></div>
+            </div>
+            <span className="time">{formatTime(currentTime)}</span>
+            <span> / </span>
+            <span className="time">{formatTime(audioRef.current ? audioRef?.current?.duration : 0)}</span>
+          </div>
+          </div>
+          <div className="controls" style={{ float: 'left', marginLeft: '10px' }}>
+            <button onClick={prevAudio} disabled={currentAudioIndex === null || currentAudioIndex === 0}><FaStepBackward /></button>
+            <button onClick={toggleAudio}>{isPlaying ? <FaPause /> : <FaPlay />}</button>
+            <button onClick={toggleShuffleMode}>
+          <FaRandom style={{ color: isShuffleMode ? 'green' : 'white' }} />
+        </button>            <button onClick={nextAudio} disabled={currentAudioIndex === null || currentAudioIndex === files.files.length - 1}><FaStepForward /></button>
+          </div>
       </div>
       <div className="controls">
         <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
@@ -143,31 +191,27 @@ function App() {
       <span className="page-count">{`Page ${currentPage}`} of {files.total_pages}</span>
 </div>
       <h1>Music Library</h1>
-      <div className="file-details">
+      <div className="file-details" style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
         <table>
           <thead>
             <tr>
               <th>Title</th>
               <th>Artist</th>
               <th>Album</th>
-              <th>Genre</th>
-              {/* <th>Track Number</th> */}
-              <th>Year</th>
+              {/* <th>Genre</th> */}
+              {/* <th>Year</th> */}
               <th>Duration</th>
-              {/* <th>File Path</th> */}
             </tr>
           </thead>
           <tbody>
             {files.files && files.files.map((file, index) => (
               <tr key={file.id} onClick={() => playFile(index, file.file_name)}>
-                <td>{JSON.stringify(file.title.String)}</td>
-                <td>{JSON.stringify(file.artist.String)}</td>
-                <td>{JSON.stringify(file.album.String)}</td>
-                <td>{JSON.stringify(file.genre.String)}</td>
-                {/* <td>{JSON.stringify(file.track_number.Int64)}</td> */}
-                <td>{JSON.stringify(file.year.String)}</td>
-                <td>{JSON.stringify(file.duration.Float64)}</td>
-                {/* <td>{JSON.stringify(file.file_path)}</td> */}
+                <td>{file.title.String}</td>
+                <td>{file.artist.String}</td>
+                <td>{file.album.String}</td>
+                {/* <td>{JSON.stringify(file.genre.String)}</td> */}
+                {/* <td>{JSON.stringify(file.year.String)}</td> */}
+                <td>{formatTime(JSON.stringify(file.duration.Float64))}</td>
               </tr>
             ))}
           </tbody>

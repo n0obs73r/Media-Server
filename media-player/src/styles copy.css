@@ -2,20 +2,12 @@ body {
   background-color: #121212;
   color: #fff;
 }
+
 .container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  overflow-y: auto; /* Enable vertical scrolling for the table */
-  max-height: calc(100vh - 100px); /* Adjust the height based on your layout */
-
   font-family: Arial, sans-serif;
-  overflow: hidden; /* Prevent scrolling on the entire page */
-}
-
-.file-details {
-  overflow-y: auto; /* Enable vertical scrolling for the table */
-  max-height: calc(100vh - 200px); /* Adjust the height based on your layout */
 }
 
 .NowPlaying {
@@ -24,14 +16,13 @@ body {
 
 .audio-controls {
   display: flex;
-  flex-wrap: wrap; /* Ensures items wrap on smaller screens */
   align-items: center;
-  justify-content: space-between; /* Spread items evenly */
   margin-bottom: 10px;
+  justify-content: space-between;
 }
 
 .progress-container {
-  flex-basis: 60%; /* Adjusted for better layout */
+  flex-grow: 1;
   margin-right: 10px;
 }
 
@@ -45,7 +36,6 @@ body {
 
 .controls {
   display: flex;
-  flex-wrap: wrap; /* Ensures items wrap on smaller screens */
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
@@ -71,8 +61,7 @@ body {
   border-collapse: collapse;
 }
 
-.file-details th,
-.file-details td {
+.file-details th, .file-details td {
   padding: 10px;
   border-bottom: 1px solid #444;
 }
@@ -85,50 +74,48 @@ body {
 
 /* Improved readability for list */
 .file-details td {
-  max-width: 200px;
+  max-width: 200px; /* Adjust as needed */
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 /* Responsive Styling */
-@media (max-width: 768px) {
+@media (max-width: 576px) {
   .container {
-    justify-content: space-between; 
-    padding: 10px; /* Adjusted for smaller screens */
+    padding: 10px;
   }
 
   .controls button {
     font-size: 14px;
     padding: 8px 16px;
-    flex-grow: 1; /* Allow buttons to grow and take up available space */
-  margin: 0 5px;
   }
 }
 
-@media (max-width: 576px) {
-  .audio-controls, .controls {
-    
-    flex-direction: row; /* Display buttons in a single line */
+@media (max-width: 320px) {
+  .container {
+    max-width: 100%;
   }
 
-  .controls button {
-    margin-right: 10px; /* Add spacing between buttons */
+  .audio-controls, .controls {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .progress-container {
     margin-right: 0;
     margin-bottom: 10px;
-    flex-basis: 100%; /* Adjusted for smaller screens */
   }
 
   .time {
     margin: 5px 0;
   }
 
- 
+  .controls button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
 }
-
 .page-info {
   display: flex;
   justify-content: center; /* Align items horizontally in the center */

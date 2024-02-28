@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dhowden/tag"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -55,6 +56,48 @@ func main() {
 
 		// Serve the audio file using http.ServeFile
 		c.File(audioPath)
+	})
+	r.GET("/albumart/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		// Convert backslashes to forward slashes and encode the path
+		audioPath3 := strings.ReplaceAll(path, "%20", " ")
+		audioPath2 := strings.ReplaceAll(audioPath3, "\\", " ")
+		audioPath := strings.ReplaceAll(audioPath2, "\\\\", " ")
+
+		audioPath = fmt.Sprintf("D:/Music/MP3/%s", audioPath) // Adjust the base path as per your file structure
+
+		// Open the audio file
+		file, err := os.Open(audioPath)
+		if err != nil {
+			c.String(http.StatusNotFound, "Audio file not found")
+			return
+		}
+		defer file.Close()
+
+		// Read the metadata from the audio file
+		metadata, err := tag.ReadFrom(file)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error reading metadata")
+			return
+		}
+
+		// Get the album art from the metadata
+		albumArt := metadata.Picture()
+		if albumArt == nil {
+			// Return an empty response with status code 200
+			c.String(http.StatusOK, "")
+			return
+		}
+
+		// Set the response content type to image/jpeg
+		c.Header("Content-Type", "image/jpeg")
+
+		// Write the album art to the response
+		_, err = c.Writer.Write(albumArt.Data)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error writing album art to response")
+			return
+		}
 	})
 
 	// Playlist endpoints
