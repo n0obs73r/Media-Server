@@ -1,29 +1,83 @@
-/* Styles for the table */
-table {
+/* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .progress-container {
     width: 100%;
-    border-collapse: collapse;
+    position: relative;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 5px;
+    background-color: #555;
+  }
+  
+  .progress {
+    height: 100%;
+    background-color: #1db954;
+  }
+  
+  .time {
+    display: inline-block;
+    margin: 0 10px;
+    color: #b3b3b3;
+  }
+  
+  .controls button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin: 0 5px;
+    color: #b3b3b3;
+  }
+  
+  .controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .file-details {
     margin-top: 20px;
   }
   
-  /* Styles for table header */
-  th {
-    background-color: #f2f2f2;
+  .file-details table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .file-details th,
+  .file-details td {
+    border: 1px solid #555;
+    padding: 8px;
     text-align: left;
-    padding: 8px;
   }
   
-  /* Alternate row colors */
-  tr:nth-child(even) {
-    background-color: #f2f2f2;
+  .file-details th {
+    background-color: #333;
   }
   
-  /* Styles for table data cells */
-  td {
-    padding: 8px;
-  }
-  
-  /* Hover effect for table rows */
-  tr:hover {
-    background-color: #ddd;
+  .file-details tr:hover {
+    background-color: #555;
   }
   
