@@ -3,11 +3,14 @@ body {
   color: #fff;
 }
 .container {
-  max-width: 800px;
+  max-width: 100%;
   overflow-y: auto; /* Enable vertical scrolling for the table */
   max-height: 95vh; /* Adjust the height based on your layout */
 
   font-family: Arial, sans-serif;
+  margin-left: 5%;
+  margin-right: 5%;
+  margin-top: 2%;
   overflow: hidden; /* Prevent scrolling on the entire page */
 }
 
@@ -36,6 +39,10 @@ body {
   margin-bottom: 10px;
 }
 
+.playing-song {
+  color: lightgreen; /* Change to your desired shade of green */
+}
+
 .progress-container {
   flex-basis: 60%; /* Adjusted for better layout */
   margin-right: 10px;
@@ -46,7 +53,9 @@ body {
 }
 
 .time {
-  margin: 0 10px;
+  margin: 0 2px;
+
+  font-size: 10px !important;
 }
 
 .controls {
@@ -72,6 +81,29 @@ body {
   cursor: not-allowed;
 }
 
+.controls2 {
+  display: flex;
+  flex-wrap: wrap; /* Ensures items wrap on smaller screens */
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  width: 90%;
+}
+
+.controls2 button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.controls2 button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
 .file-details table {
   width: 100%;
   border-collapse: collapse;
@@ -100,7 +132,7 @@ body {
 /* Responsive Styling */
 @media (max-width: 768px) {
   .container {
-    justify-content: space-between; 
+    justify-content: space-between;
     padding: 10px; /* Adjusted for smaller screens */
   }
 
@@ -108,13 +140,13 @@ body {
     font-size: 14px;
     padding: 8px 16px;
     flex-grow: 1; /* Allow buttons to grow and take up available space */
-  margin: 0 5px;
+    margin: 0 5px;
   }
 }
 
 @media (max-width: 576px) {
-  .audio-controls, .controls {
-    
+  .audio-controls,
+  .controls {
     flex-direction: row; /* Display buttons in a single line */
   }
 
@@ -129,10 +161,9 @@ body {
   }
 
   .time {
-    margin: 5px 0;
+    margin-left: 5px 5px;
+    font-size: 10px !important;
   }
-
- 
 }
 
 .page-info {
