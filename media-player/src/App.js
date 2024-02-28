@@ -1,38 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
-import dummyImage from './img/dummy.png'; // Import the dummy image
-import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRandom  } from 'react-icons/fa';
-
-
+import dummyImage from './img/dummy.png';
+import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRandom } from 'react-icons/fa';
 
 function App() {
   const [files, setFiles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [recordsPerPage] = useState(50);
+  const [recordsPerPage] = useState(30);
   const [currentAudioIndex, setCurrentAudioIndex] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false); // State to track whether audio is playing
+  const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
   const [isShuffleMode, setIsShuffleMode] = useState(false);
   const progressRef = useRef(null);
-
-  const fetchAlbumArt = async (filePath) => {
-    try {
-      const response = await fetch(`http://192.168.1.7:8080/albumart/${encodeURIComponent(filePath)}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch album art: ${response.status} ${response.statusText}`);
-      }
-      return URL.createObjectURL(await response.blob()); // Convert the response blob to a URL
-    } catch (error) {
-      console.error('Error fetching album art:', error);
-      throw new Error('Failed to fetch album art');
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`http://192.168.1.7:8080/files?limit=${recordsPerPage}&offset=${(currentPage - 1) * recordsPerPage}`)
-      .then(response => response.json())
-      .then(data => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://192.168.1.7:8080/files?limit=${recordsPerPage}&offset=${(currentPage - 1) * recordsPerPage}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const data = await response.json();
         if (currentPage === 1) {
           setFiles(data);
         } else {
@@ -41,8 +32,14 @@ function App() {
             total_pages: data.total_pages
           }));
         }
-      })
-      .catch(error => console.error('Error fetching data:', error));
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [currentPage, recordsPerPage]);
 
   useEffect(() => {
@@ -59,14 +56,56 @@ function App() {
     }
   }, [currentAudioIndex, files]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const fileDetailsDiv = document.querySelector('.file-details');
+      if (!fileDetailsDiv) return; // Ensure the file details div exists
   
+      const divHeight = fileDetailsDiv.clientHeight; // Height of the visible area
+      const scrollTop = fileDetailsDiv.scrollTop; // Scroll position from the top
+      const scrollHeight = fileDetailsDiv.scrollHeight; // Total scrollable height
+  
+      // Calculate the distance from the bottom of the visible area to the bottom of the scrollable area
+      const scrollBottom = scrollHeight - (scrollTop + divHeight);
+  
+      // If the scroll bottom is close to 0 (indicating it's at the bottom) and there is more data to load
+      if (scrollBottom < 50 && !loading && currentPage < files.total_pages) {
+        setCurrentPage(prevPage => prevPage + 1);
+      }
+    };
+  
+    const fileDetailsDiv = document.querySelector('.file-details');
+    if (fileDetailsDiv) {
+      fileDetailsDiv.addEventListener('scroll', handleScroll);
+    }
+  
+    return () => {
+      if (fileDetailsDiv) {
+        fileDetailsDiv.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [currentPage, files, loading]);
+  
+
+  const fetchAlbumArt = async (filePath) => {
+    try {
+      const response = await fetch(`http://192.168.1.7:8080/albumart/${encodeURIComponent(filePath)}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch album art: ${response.status} ${response.statusText}`);
+      }
+      return URL.createObjectURL(await response.blob());
+    } catch (error) {
+      console.error('Error fetching album art:', error);
+      throw new Error('Failed to fetch album art');
+    }
+  };
 
   const playFile = (index, filePath) => {
     setCurrentAudioIndex(index);
     const outputString = filePath.replace(/\\/g, '').replace(/"/g, '');
     audioRef.current.src = `http://192.168.1.7:8080/audio/${encodeURIComponent(outputString)}`;
     audioRef.current.play().then(() => {
-      setIsPlaying(true); // Set isPlaying to true when audio starts playing
+      setIsPlaying(true);
     }).catch(error => {
       console.error('Failed to play audio:', error);
     });
@@ -88,6 +127,7 @@ function App() {
       });
     }
   };
+
   const nextAudio = () => {
     let nextIndex;
     if (isShuffleMode) {
@@ -106,7 +146,6 @@ function App() {
       console.error("Invalid file data:", nextFile);
     }
   };
-  
 
   const prevAudio = () => {
     if (currentAudioIndex !== null && currentAudioIndex > 0) {
@@ -123,8 +162,7 @@ function App() {
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
-      if(audioRef.current.currentTime === audioRef.current.duration)
-        nextAudio()
+      if (audioRef.current.currentTime === audioRef.current.duration) nextAudio();
     }
   };
 
@@ -135,31 +173,34 @@ function App() {
   };
 
   const nextPage = () => {
-    setCurrentPage(currentPage + 1);
+    if (!loading && currentPage < files.total_pages) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
   };
 
   const prevPage = () => {
-    setCurrentPage(currentPage - 1);
+    if (!loading && currentPage > 1) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
   };
-  
 
   return (
-     <div className="container">
-      <div className="file-details">
-      <div className="album-art" style={{ float: 'left', marginRight: '10px' }}>
+    <div className="container">
+      <div className="file-details-old">
+        <div className="album-art" style={{ float: 'left', marginRight: '10px' }}>
           {files.files && files.files[currentAudioIndex] && files.files[currentAudioIndex].album_art ?
             <img src={files.files[currentAudioIndex].album_art} alt="Album Art" style={{ maxWidth: '50px', height: '50px' }} /> :
-            <img src={dummyImage} alt="Dummy Image" style={{ maxWidth: '50px', height: 'auto' }} /> // Render dummy image if no album art
+            <img src={dummyImage} alt="Dummy Image" style={{ maxWidth: '50px', height: 'auto' }} />
           }
         </div>
         <div className='NowPlaying' style={{ overflow: 'hidden' }}>
           <audio ref={audioRef} onTimeUpdate={handleTimeUpdate}></audio>
           <div className="audio-controls">
             <div className="progress-container" style={{ float: 'left', width: 'calc(100% - 80px)' }}>
-            <div className="song-details" style={{ float: 'left', maxWidth: 'calc(100% - 110px)', overflow: 'hidden' }}>
-    <div>Title: {files.files && files.files[currentAudioIndex] ? files.files[currentAudioIndex].title.String : 'Unknown'}</div>
-    <div>Artist: {files.files && files.files[currentAudioIndex] ? files.files[currentAudioIndex].artist.String : 'Unknown'}</div>
-  </div>
+              <div className="song-details" style={{ float: 'left', maxWidth: 'calc(100% - 110px)', overflow: 'hidden' }}>
+                <div>Title: {files.files && files.files[currentAudioIndex] ? files.files[currentAudioIndex].title?.String || 'Unknown' : 'Unknown'}</div>
+                <div>Artist: {files.files && files.files[currentAudioIndex] ? files.files[currentAudioIndex].artist?.String || 'Unknown' : 'Unknown'}</div>
+              </div>
               <input
                 type="range"
                 value={currentTime}
@@ -174,44 +215,39 @@ function App() {
             <span> / </span>
             <span className="time">{formatTime(audioRef.current ? audioRef?.current?.duration : 0)}</span>
           </div>
-          </div>
-          <div className="controls" style={{ float: 'left', marginLeft: '10px' }}>
-            <button onClick={prevAudio} disabled={currentAudioIndex === null || currentAudioIndex === 0}><FaStepBackward /></button>
-            <button onClick={toggleAudio}>{isPlaying ? <FaPause /> : <FaPlay />}</button>
-            <button onClick={toggleShuffleMode}>
-          <FaRandom style={{ color: isShuffleMode ? 'green' : 'white' }} />
-        </button>            <button onClick={nextAudio} disabled={currentAudioIndex === null || currentAudioIndex === files.files.length - 1}><FaStepForward /></button>
-          </div>
+        </div>
+        <div className="controls" style={{ float: 'left', marginLeft: '10px' }}>
+          <button onClick={prevAudio} disabled={currentAudioIndex === null || currentAudioIndex === 0}><FaStepBackward /></button>
+          <button onClick={toggleAudio}>{isPlaying ? <FaPause /> : <FaPlay />}</button>
+          <button onClick={toggleShuffleMode}><FaRandom style={{ color: isShuffleMode ? 'green' : 'white' }} /></button>
+          <button onClick={nextAudio} disabled={currentAudioIndex === null || currentAudioIndex === files.files.length - 1}><FaStepForward /></button>
+        </div>
       </div>
       <div className="controls">
-        <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
-        <button onClick={nextPage}>Next</button>
+        <button onClick={prevPage} disabled={currentPage === 1 || loading}>Previous</button>
+        <button onClick={nextPage} disabled={currentPage === files.total_pages || loading}>Next</button>
       </div>
       <div className="page-info">
-      <span className="page-count">{`Page ${currentPage}`} of {files.total_pages}</span>
-</div>
+        <span className="page-count">{`Page ${currentPage} of ${files.total_pages}`}</span>
+      </div>
       <h1>Music Library</h1>
-      <div className="file-details" style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
+      <div className="file-details" >
         <table>
           <thead>
             <tr>
               <th>Title</th>
               <th>Artist</th>
               <th>Album</th>
-              {/* <th>Genre</th> */}
-              {/* <th>Year</th> */}
               <th>Duration</th>
             </tr>
           </thead>
           <tbody>
             {files.files && files.files.map((file, index) => (
               <tr key={file.id} onClick={() => playFile(index, file.file_name)}>
-                <td>{file.title.String}</td>
-                <td>{file.artist.String}</td>
-                <td>{file.album.String}</td>
-                {/* <td>{JSON.stringify(file.genre.String)}</td> */}
-                {/* <td>{JSON.stringify(file.year.String)}</td> */}
-                <td>{formatTime(JSON.stringify(file.duration.Float64))}</td>
+                <td>{file.title?.String || 'Unknown'}</td>
+                <td>{file.artist?.String || 'Unknown'}</td>
+                <td>{file.album?.String || 'Unknown'}</td>
+                <td>{formatTime(file.duration?.Float64 || 0)}</td>
               </tr>
             ))}
           </tbody>

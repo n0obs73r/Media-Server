@@ -4,18 +4,24 @@ body {
 }
 .container {
   max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
   overflow-y: auto; /* Enable vertical scrolling for the table */
-  max-height: calc(100vh - 100px); /* Adjust the height based on your layout */
+  max-height: 95vh; /* Adjust the height based on your layout */
 
   font-family: Arial, sans-serif;
   overflow: hidden; /* Prevent scrolling on the entire page */
 }
 
 .file-details {
+  overflow-x: 0;
   overflow-y: auto; /* Enable vertical scrolling for the table */
-  max-height: calc(100vh - 200px); /* Adjust the height based on your layout */
+  max-height: 60vh; /* Adjust the height based on your layout */
+  /* style={{ , maxHeight: 'calc(100vh - 100px)' }} */
+}
+.file-details-old {
+  overflow-x: 0;
+  overflow-y: auto; /* Enable vertical scrolling for the table */
+  max-height: 60vh; /* Adjust the height based on your layout */
+  /* style={{ , maxHeight: 'calc(100vh - 100px)' }} */
 }
 
 .NowPlaying {
