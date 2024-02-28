@@ -1,0 +1,29 @@
+/* Styles for the table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  /* Styles for table header */
+  th {
+    background-color: #f2f2f2;
+    text-align: left;
+    padding: 8px;
+  }
+  
+  /* Alternate row colors */
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  /* Styles for table data cells */
+  td {
+    padding: 8px;
+  }
+  
+  /* Hover effect for table rows */
+  tr:hover {
+    background-color: #ddd;
+  }
+  
