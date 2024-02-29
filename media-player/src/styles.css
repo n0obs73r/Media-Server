@@ -190,7 +190,157 @@ h1 {
     margin: 0 5px;
   }
 }
+.audio-controls,
+  .controls {
+    flex-direction: row;
+  }
 
+  .controls button {
+    margin-right: 10px;
+  }
+
+  .progress-container {
+    margin-right: 0;
+    margin-bottom: 10px;
+    flex-basis: 100%;
+  }
+
+  .time {
+    margin-left: 5px 5px;
+    font-size: 10px !important;
+  }
+
+  .page-info {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .page-count,
+  .total-pages {
+    font-size: 16px;
+    color: #333;
+    margin: 0 10px;
+  }
+
+  .list-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+
+  .list-table th:first-child {
+    border-top-left-radius: 10px;
+  }
+
+  .list-table th:last-child {
+    border-top-right-radius: 10px;
+  }
+
+  .list-table th,
+  .list-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e1e1e1;
+  }
+
+  .list-table th {
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #3c9421;
+    text-transform: uppercase;
+  }
+
+  .song-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .marquee-container {
+    display: flex;
+    align-items: center;
+  }
+
+  .static-text {
+    margin-right: 8px;
+  }
+
+  /* .marquee-content {
+  } */
+
+  .list-table tbody tr td:first-child {
+    width: 60px;
+  }
+
+  .list-table tbody tr td img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+
+  .list-table tbody tr td .title {
+    font-weight: bold;
+    color: #333;
+  }
+
+  .list-table tbody tr td .artist {
+    color: #666;
+  }
+
+  .list-table tbody tr.playing-song {
+    font-weight: bold;
+  }
+
+  .list-table th:first-child {
+    text-align: left;
+  }
+
+  .list-table th:nth-child(2),
+  .list-table td:nth-child(2) {
+    width: 20%;
+    text-align: center;
+  }
+
+  .album-art {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #333;
+  }
+
+  .album-art::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #000;
+    z-index: 1;
+  }
+
+  .album-art img {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    animation: rotateRecord 4s linear infinite;
+  }
+
+  @keyframes rotateRecord {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 @media (max-width: 576px) {
   .audio-controls,
   .controls {

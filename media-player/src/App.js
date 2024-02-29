@@ -3,6 +3,7 @@ import "./styles.css";
 import PlayerControls from "./PlayerControls";
 import ListView from "./ListView";
 
+
 function App() {
     const [files, setFiles] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -14,37 +15,51 @@ function App() {
     const [isShuffleMode, setIsShuffleMode] = useState(false);
     const progressRef = useRef(null);
     const [loading, setLoading] = useState(false);
+    const [sortBy, setSortBy] = useState('title'); // Default sorting column
+    const [order, setOrder] = useState('asc'); // Default sorting order
   
-    useEffect(() => {
-      const fetchData = async () => {
-        setLoading(true);
-        try {
-          const response = await fetch(
-            `http://192.168.1.6:8080/files?limit=${recordsPerPage}&offset=${
-              (currentPage - 1) * recordsPerPage
-            }`
-          );
-          if (!response.ok) {
-            throw new Error("Failed to fetch data");
-          }
-          const data = await response.json();
-          if (currentPage === 1) {
-            setFiles(data);
-          } else {
-            setFiles((prevFiles) => ({
-              files: [...prevFiles.files, ...data.files],
-              total_pages: data.total_pages,
-            }));
-          }
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        } finally {
-          setLoading(false);
+  
+    
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `http://192.168.1.6:8080/files?limit=${recordsPerPage}&offset=${
+            (currentPage - 1) * recordsPerPage
+          }&sortBy=${sortBy}&order=${order}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
         }
-      };
-  
-      fetchData();
-    }, [currentPage, recordsPerPage]);
+        const data = await response.json();
+        if (currentPage === 1) {
+          setFiles(data);
+        } else {
+          setFiles((prevFiles) => ({
+            files: [...prevFiles.files, ...data.files],
+            total_pages: data.total_pages,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, recordsPerPage, sortBy, order]);
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      // Toggle order if already sorting by the same column
+      setOrder(order === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setOrder('asc'); // Reset order to ascending when sorting by a new column
+    }
+  };
   
     useEffect(() => {
       if (
@@ -224,6 +239,7 @@ function App() {
         playFile={playFile}
         currentAudioIndex={currentAudioIndex}
         formatTime={formatTime}
+        handleSort={handleSort}
       />
     </div>
   );

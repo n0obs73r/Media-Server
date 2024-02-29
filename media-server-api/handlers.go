@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 
 	"net/http"
@@ -12,9 +13,11 @@ import (
 
 func listFilesHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Extracting limit and offset from query string
+		// Extracting limit, offset, sortBy, and order from query string
 		limitStr := c.DefaultQuery("limit", "100")
 		offsetStr := c.DefaultQuery("offset", "0")
+		sortBy := c.Query("sortBy")
+		order := c.DefaultQuery("order", "asc")
 
 		// Convert limit and offset to integers
 		limit, err := strconv.Atoi(limitStr)
@@ -27,6 +30,19 @@ func listFilesHandler(db *sql.DB) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset"})
 			return
 		}
+
+		// Validate sortBy parameter
+		validSortColumns := map[string]bool{
+			"title":  true,
+			"year":   true,
+			"artist": true,
+			// Add more columns as needed
+		}
+		if !validSortColumns[sortBy] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sortBy parameter"})
+			return
+		}
+
 		// Get total count of files
 		var totalFiles int
 		err = db.QueryRow("SELECT COUNT(*) FROM mp3_files").Scan(&totalFiles)
@@ -41,8 +57,8 @@ func listFilesHandler(db *sql.DB) gin.HandlerFunc {
 			totalPages++
 		}
 
-		// Prepare SQL query with limit and offset
-		query := "SELECT * FROM mp3_files LIMIT $1 OFFSET $2"
+		// Prepare SQL query with limit, offset, sortBy, and order
+		query := fmt.Sprintf("SELECT * FROM mp3_files ORDER BY %s %s LIMIT $1 OFFSET $2", sortBy, order)
 		rows, err := db.Query(query, limit, offset)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -66,30 +82,6 @@ func listFilesHandler(db *sql.DB) gin.HandlerFunc {
 		})
 	}
 }
-
-//no limit
-// func listFilesHandler(db *sql.DB) gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		rows, err := db.Query("SELECT * FROM mp3_files")
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		defer rows.Close()
-
-// 		var files []File
-// 		for rows.Next() {
-// 			var file File
-// 			if err := rows.Scan(&file.ID, &file.FileName, &file.FilePath, &file.Title, &file.Artist, &file.Album, &file.Genre, &file.TrackNumber, &file.Year, &file.Duration); err != nil {
-// 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 				return
-// 			}
-// 			files = append(files, file)
-// 		}
-
-// 		c.JSON(http.StatusOK, files)
-// 	}
-// }
 
 func listFilesByArtistHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
