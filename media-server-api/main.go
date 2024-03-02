@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/dhowden/tag"
@@ -15,6 +16,11 @@ import (
 )
 
 func main() {
+	BasePath := "D:/Music/MP3"
+	if runtime.GOOS != "windows" {
+		BasePath = "/Users/ravi/Music"
+	}
+
 	r := gin.Default()
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"*"}                                       // Allow requests from all origins
@@ -22,7 +28,7 @@ func main() {
 	config.AllowHeaders = []string{"Origin", "Content-Type"}                  // Allow specific headers
 	r.Use(cors.New(config))                                                   // Apply CORS middleware with custom configuration
 
-	db, err := sql.Open("postgres", "postgresql://anay:anay@localhost/mp3_database?sslmode=disable")
+	db, err := sql.Open("postgres", "postgresql://ravi:ravi@localhost/mp3_database?sslmode=disable")
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
@@ -46,7 +52,7 @@ func main() {
 		audioPath2 := strings.ReplaceAll(audioPath3, "\\", " ")
 		audioPath := strings.ReplaceAll(audioPath2, "\\\\", " ")
 
-		audioPath = fmt.Sprintf("D:/Music/MP3/%s", audioPath) // Adjust the base path as per your file structure
+		audioPath = fmt.Sprintf("%s/%s", BasePath, audioPath) // Adjust the base path as per your file structure
 		_, err := os.Stat(audioPath)
 		if os.IsNotExist(err) {
 			c.String(http.StatusNotFound, "Audio file not found")
@@ -61,7 +67,7 @@ func main() {
 		audioPath2 := strings.ReplaceAll(audioPath3, "\\", " ")
 		audioPath := strings.ReplaceAll(audioPath2, "\\\\", " ")
 
-		audioPath = fmt.Sprintf("D:/Music/MP3/%s", audioPath) // Adjust the base path as per your file structure
+		audioPath = fmt.Sprintf("%s/%s", BasePath, audioPath) // Adjust the base path as per your file structure
 
 		file, err := os.Open(audioPath)
 		if err != nil {

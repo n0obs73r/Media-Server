@@ -3,29 +3,32 @@ import "./styles.css";
 import PlayerControls from "./PlayerControls";
 import ListView from "./ListView";
 
-
 function App() {
-    const [files, setFiles] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [recordsPerPage] = useState(30);
-    const [currentAudioIndex, setCurrentAudioIndex] = useState(null);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef(null);
-    const [isShuffleMode, setIsShuffleMode] = useState(false);
-    const progressRef = useRef(null);
-    const [loading, setLoading] = useState(false);
-    const [sortBy, setSortBy] = useState('title'); // Default sorting column
-    const [order, setOrder] = useState('asc'); // Default sorting order
-  
-  
-    
+  const [files, setFiles] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recordsPerPage] = useState(30);
+  const [currentAudioIndex, setCurrentAudioIndex] = useState(null);
+  const [currentAudioId, setCurrentAudioId] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const [isShuffleMode, setIsShuffleMode] = useState(false);
+  const progressRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+
+  const [listModifierState, setListModifierState] = useState({
+    sortBy: "title",
+    order: "asc",
+  });
+  const [sortBy, setSortBy] = useState('title'); // Default sorting column
+  const [order, setOrder] = useState('asc'); // Default sorting order
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://192.168.1.6:8080/files?limit=${recordsPerPage}&offset=${
+          `http://localhost:8080/files?limit=${recordsPerPage}&offset=${
             (currentPage - 1) * recordsPerPage
           }&sortBy=${sortBy}&order=${order}`
         );
@@ -51,84 +54,103 @@ function App() {
     fetchData();
   }, [currentPage, recordsPerPage, sortBy, order]);
 
+  useEffect(() => {
+    if (currentAudioIndex === null) {
+      return;
+    }
+
+    const updatedIndex = files.files.findIndex(
+      (file) => file.id === currentAudioId
+    );
+    setCurrentAudioIndex(updatedIndex);
+  }, [files]);
+
+  useEffect(() => {
+    if (currentAudioIndex === null) {
+      return;
+    }
+
+    setCurrentAudioId(files.files[currentAudioIndex].id);
+  }, [currentAudioIndex]);
+
   const handleSort = (column) => {
     if (sortBy === column) {
       // Toggle order if already sorting by the same column
       setOrder(order === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(column);
-      setOrder('asc'); // Reset order to ascending when sorting by a new column
+      setOrder('asc'); // Reset order to ascend when sorting by a new column
     }
   };
-  
-    useEffect(() => {
-      if (
-        currentAudioIndex !== null &&
-        files.files &&
-        files.files[currentAudioIndex] &&
-        !files.files[currentAudioIndex].album_art
-      ) {
-        fetchAlbumArt(files.files[currentAudioIndex].file_name)
-          .then((albumArtUrl) => {
-            setFiles((prevFiles) => {
-              const updatedFiles = [...prevFiles.files];
-              updatedFiles[currentAudioIndex].album_art = albumArtUrl;
-              return { ...prevFiles, files: updatedFiles };
-            });
-          })
-          .catch((error) => console.error("Error fetching album art:", error));
-      }
-    }, [currentAudioIndex, files]);
-  
-    useEffect(() => {
-      const handleScroll = () => {
-        const fileDetailsDiv = document.querySelector(".file-details");
-        if (!fileDetailsDiv) return; // Ensure the file details div exists
-  
-        const divHeight = fileDetailsDiv.clientHeight; // Height of the visible area
-        const scrollTop = fileDetailsDiv.scrollTop; // Scroll position from the top
-        const scrollHeight = fileDetailsDiv.scrollHeight; // Total scrollable height
-  
-        const scrollBottom = scrollHeight - (scrollTop + divHeight);
-  
-        if (scrollBottom < 50 && !loading && currentPage < files.total_pages) {
-          setCurrentPage((prevPage) => prevPage + 1);
-        }
-      };
-  
+
+  useEffect(() => {
+    if (
+      currentAudioIndex !== null &&
+      files.files &&
+      files.files[currentAudioIndex] &&
+      !files.files[currentAudioIndex].album_art
+    ) {
+      fetchAlbumArt(files.files[currentAudioIndex].file_name)
+        .then((albumArtUrl) => {
+          setFiles((prevFiles) => {
+            const updatedFiles = [...prevFiles.files];
+            updatedFiles[currentAudioIndex].album_art = albumArtUrl;
+            return { ...prevFiles, files: updatedFiles };
+          });
+        })
+        .catch((error) => console.error("Error fetching album art:", error));
+    }
+  }, [currentAudioIndex, files]);
+
+  useEffect(() => {
+    const handleScroll = () => {
       const fileDetailsDiv = document.querySelector(".file-details");
-      if (fileDetailsDiv) {
-        fileDetailsDiv.addEventListener("scroll", handleScroll);
-      }
-  
-      return () => {
-        if (fileDetailsDiv) {
-          fileDetailsDiv.removeEventListener("scroll", handleScroll);
-        }
-      };
-    }, [currentPage, files, loading]);
-  
-    const fetchAlbumArt = async (filePath) => {
-      try {
-        const response = await fetch(
-          `http://192.168.1.6:8080/albumart/${encodeURIComponent(filePath)}`
-        );
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch album art: ${response.status} ${response.statusText}`
-          );
-        }
-        return URL.createObjectURL(await response.blob());
-      } catch (error) {
-        console.error("Error fetching album art:", error);
-        throw new Error("Failed to fetch album art");
+      if (!fileDetailsDiv) return; // Ensure the file details div exists
+
+      const divHeight = fileDetailsDiv.clientHeight; // Height of the visible area
+      const scrollTop = fileDetailsDiv.scrollTop; // Scroll position from the top
+      const scrollHeight = fileDetailsDiv.scrollHeight; // Total scrollable height
+
+      const scrollBottom = scrollHeight - (scrollTop + divHeight);
+
+      if (scrollBottom < 50 && !loading && currentPage < files.total_pages) {
+        setCurrentPage((prevPage) => prevPage + 1);
       }
     };
-  
+
+    const fileDetailsDiv = document.querySelector(".file-details");
+    if (fileDetailsDiv) {
+      fileDetailsDiv.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (fileDetailsDiv) {
+        fileDetailsDiv.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [currentPage, files, loading]);
+
+  const fetchAlbumArt = async (filePath) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/albumart/${encodeURIComponent(filePath)}`
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch album art: ${response.status} ${response.statusText}`
+        );
+      }
+      return URL.createObjectURL(await response.blob());
+    } catch (error) {
+      console.error("Error fetching album art:", error);
+      throw new Error("Failed to fetch album art");
+    }
+  };
+
     const playFile = (index, filePath) => {
       setCurrentAudioIndex(index);
       const outputString = filePath.replace(/\\/g, "").replace(/"/g, "");
-      audioRef.current.src = `http://192.168.1.6:8080/audio/${encodeURIComponent(
+      audioRef.current.src = `http://localhost:8080/audio/${encodeURIComponent(
         outputString
       )}`;
       audioRef.current
@@ -140,11 +162,11 @@ function App() {
           console.error("Failed to play audio:", error);
         });
     };
-  
+
     const toggleShuffleMode = () => {
       setIsShuffleMode(!isShuffleMode);
     };
-  
+
     const toggleAudio = () => {
       if (isPlaying) {
         audioRef.current.pause();
@@ -160,7 +182,7 @@ function App() {
           });
       }
     };
-  
+
     const nextAudio = () => {
       let nextIndex;
       if (isShuffleMode) {
@@ -179,19 +201,19 @@ function App() {
         console.error("Invalid file data:", nextFile);
       }
     };
-  
+
     const prevAudio = () => {
       if (currentAudioIndex !== null && currentAudioIndex > 0) {
         const prevIndex = currentAudioIndex - 1;
         playFile(prevIndex, files.files[prevIndex].file_name);
       }
     };
-  
+
     const handleSeek = (e) => {
       const seekTime = parseFloat(e.target.value);
       audioRef.current.currentTime = seekTime;
     };
-  
+
     const handleTimeUpdate = () => {
       if (audioRef.current && audioRef.current.duration) {
         setCurrentTime(audioRef.current.currentTime);
@@ -200,8 +222,7 @@ function App() {
         }
       }
     };
-    
-  
+
     const formatTime = (time) => {
       const minutes = Math.floor(time / 60);
       const seconds = Math.floor(time % 60);
@@ -209,8 +230,7 @@ function App() {
         seconds < 10 ? "0" : ""
       }${seconds}`;
     };
-  
-   
+
   return (
     <div className="container-root">
       <PlayerControls
