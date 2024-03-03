@@ -38,6 +38,9 @@ func listFilesHandler(db *sql.DB) gin.HandlerFunc {
 			"artist": true,
 			// Add more columns as needed
 		}
+		if sortBy == "" {
+			sortBy = "title"
+		}
 		if !validSortColumns[sortBy] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sortBy parameter"})
 			return

@@ -8,8 +8,8 @@ from tqdm import tqdm
 def connect_to_postgres():
     conn = psycopg2.connect(
         dbname="mp3_database",
-        user="anay",
-        password="anay",
+        user="ravi",
+        password="ravi",
         host="localhost",
         port="5432"
     )
@@ -69,4 +69,4 @@ def main(directory):
     conn.close()
 
 if __name__ == "__main__":
-    main(r"D:\Music\MP3")
+    main(r"/Users/ravi/Music")
